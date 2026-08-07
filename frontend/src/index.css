@@ -1,0 +1,29 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+}
+
+.app-nav {
+  display: flex;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #ccc;
+}
+
+.app-nav a {
+  text-decoration: none;
+  color: #333;
+}
+
+.app-nav a.active {
+  font-weight: 600;
+  color: #0b5fff;
+}
+
+.app-content {
+  padding: 1rem;
+}

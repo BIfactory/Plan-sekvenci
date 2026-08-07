@@ -1,0 +1,21 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+
+# obsahuje realny connection string (heslo) - nikdy neversionovat
+backend/src/PlanSekvenci.Api/appsettings.Development.json
+
+# Node / frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+*.tsbuildinfo
+
+# Editors / OS
+.idea/
+*.suo
+.DS_Store
