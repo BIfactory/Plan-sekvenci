@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Authentication.Negotiate;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using PlanSekvenci.Api.Authorization;
+using PlanSekvenci.Api.Configuration;
 using PlanSekvenci.Api.Data;
+using PlanSekvenci.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,10 +28,37 @@ builder.Services.AddAuthorizationBuilder()
     .AddPolicy(ApproverRequirement.PolicyName, policy =>
         policy.Requirements.Add(new ApproverRequirement()));
 
-builder.Services.AddSingleton<IAuthorizationHandler, ApproverAuthorizationHandler>();
-
 builder.Services.Configure<ApproverOptions>(
     builder.Configuration.GetSection(ApproverOptions.SectionName));
+
+builder.Services.Configure<ClientSettingsOptions>(
+    builder.Configuration.GetSection(ClientSettingsOptions.SectionName));
+
+// DevApproverService obchazi AD/LDAP (viz Authorization:BypassAdInDevelopment v
+// appsettings.Development.json) - jen pro pripady, kdy AD neni z vyvojoveho stroje
+// dosazitelny. Bezpecnostne neskodne, protoze vyzaduje i IsDevelopment().
+var bypassAdInDevelopment = builder.Environment.IsDevelopment()
+    && builder.Configuration.GetValue<bool>($"{ApproverOptions.SectionName}:BypassAdInDevelopment");
+if (bypassAdInDevelopment)
+{
+    builder.Services.AddSingleton<IApproverService, DevApproverService>();
+}
+else
+{
+    builder.Services.AddSingleton<IApproverService, ApproverService>();
+}
+
+builder.Services.AddSingleton<IAuthorizationHandler, ApproverAuthorizationHandler>();
+
+builder.Services.AddScoped<AuditLogService>();
+builder.Services.AddScoped<WorkplanService>();
+builder.Services.AddScoped<ProducedService>();
+builder.Services.AddScoped<ReferenceService>();
+
+// PRD 4.5: centralizovany zapis chyb do t_log_powerapp misto rucniho logovani po
+// kazdem Patch, jak to delala puvodni appka.
+builder.Services.AddExceptionHandler<ErrorLoggingExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 const string FrontendCorsPolicy = "FrontendDev";
 builder.Services.AddCors(options =>
@@ -43,6 +73,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {

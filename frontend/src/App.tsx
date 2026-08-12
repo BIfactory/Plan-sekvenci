@@ -1,6 +1,8 @@
 import { NavLink, Route, Routes, Navigate } from "react-router-dom";
 import PlanSekvenciPage from "./pages/PlanSekvenciPage";
 import VyhodnoceniPage from "./pages/VyhodnoceniPage";
+import czLogo from "./assets/cz-logo.png";
+import bifactoryLogo from "./assets/bifactory-logo.png";
 
 export default function App() {
   return (
@@ -8,6 +10,10 @@ export default function App() {
       <nav className="app-nav">
         <NavLink to="/plan-sekvenci">Plán sekvencí</NavLink>
         <NavLink to="/vyhodnoceni">Vyhodnocení</NavLink>
+        <div className="app-nav-logos">
+          <img src={czLogo} alt="CZ" className="app-nav-logo" />
+          <img src={bifactoryLogo} alt="BIfactory" className="app-nav-logo app-nav-logo-vendor" />
+        </div>
       </nav>
       <main className="app-content">
         <Routes>

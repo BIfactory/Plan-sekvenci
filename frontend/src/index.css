@@ -7,8 +7,55 @@ body {
   margin: 0;
 }
 
+/* --- Bootstrapovy vzhled pro form prvky (text/date input, select, textarea) ---
+   Zamerne jen vizual (border/radius/focus/disabled), ne cely Bootstrap balik -
+   velikost/padding pro konkretni misto v UI dal resi kontextove tridy nize
+   (.search-field input, .filter-select-field select apod.), tady je jen spolecny
+   zaklad. Focus ring pouziva zelenou appky (#43c466), ne vychozi Bootstrap modrou,
+   at to sedi se zbytkem UI (primary-button, toggle "on" stav). */
+input[type="text"],
+input[type="date"],
+select,
+textarea {
+  font-family: inherit;
+  border: 1px solid #ced4da;
+  border-radius: 0.375rem;
+  padding: 0.3rem 0.6rem;
+  background-color: #fff;
+  color: #212529;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+input[type="text"]:focus,
+input[type="date"]:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #43c466;
+  box-shadow: 0 0 0 0.2rem rgba(67, 196, 102, 0.25);
+}
+
+input[type="text"]:disabled,
+select:disabled,
+textarea:disabled {
+  background-color: #e9ecef;
+  color: #6c757d;
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23555' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 0.7rem;
+  padding-right: 1.6rem;
+}
+
 .app-nav {
   display: flex;
+  align-items: center;
   gap: 1rem;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #ccc;
@@ -16,14 +63,934 @@ body {
 
 .app-nav a {
   text-decoration: none;
-  color: #333;
+  font-weight: bold;
+  color: #af9d5b;
+}
+
+.app-nav a:hover,
+.app-nav a:focus {
+  font-weight: bold;
+  color: #3e3d40;
+  text-decoration: underline;
 }
 
 .app-nav a.active {
-  font-weight: 600;
-  color: #0b5fff;
+  color: #3e3d40;
+  text-decoration: underline;
+}
+
+.app-nav-logos {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.app-nav-logo {
+  height: 28px;
+  width: auto;
+  display: block;
+}
+
+.app-nav-logo-vendor {
+  height: 34px;
 }
 
 .app-content {
   padding: 1rem;
+}
+
+.plan-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.page-header h1 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.refresh-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.refresh-button {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 0.3rem 0.6rem;
+  background: #f5f5f5;
+  cursor: pointer;
+}
+
+.refresh-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.last-sync {
+  color: #666;
+}
+
+.stale-warning {
+  color: #d32f2f;
+  font-weight: 600;
+}
+
+/* --- Plán sekvencí: horní panely (filtry / Aktuální data / Historie) --- */
+
+.ps-header-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.15fr) minmax(0, 0.85fr);
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.ps-card {
+  background: #f1f4f9;
+  border-radius: 6px;
+  padding: 0.6rem 0.75rem;
+}
+
+.ps-card h1 {
+  margin: 0;
+  font-size: 1.3rem;
+  white-space: nowrap;
+}
+
+.ps-card h2 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.ps-title-search-row {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.search-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.search-field input {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.35rem;
+  width: 9rem;
+}
+
+.ps-toggle-row {
+  display: flex;
+  gap: 0.9rem;
+  margin-left: auto;
+}
+
+.toggle-field {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 30px;
+  height: 16px;
+  border-radius: 9px;
+  border: 1px solid #ced4da;
+  background: #e9ecef;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.toggle-switch:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 0.2rem rgba(67, 196, 102, 0.25);
+}
+
+.toggle-switch.on {
+  background: #43c466;
+  border-color: #43c466;
+}
+
+.toggle-switch:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.12s ease-in-out;
+}
+
+.toggle-switch.on .toggle-knob {
+  left: 16px;
+}
+
+.ps-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem 0.75rem;
+}
+
+.filter-select-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.filter-select-label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.filter-clear-button {
+  background: none;
+  border: none;
+  color: #b7bcc7;
+  cursor: pointer;
+  font-size: 0.65rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.filter-select-field select {
+  font-size: 0.8rem;
+  padding: 0.2rem 1.3rem 0.2rem 0.4rem;
+}
+
+.filter-select-field select:disabled {
+  color: #aaa;
+}
+
+.ps-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.ps-summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.ps-summary-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+
+.ps-summary-label {
+  color: #333;
+}
+
+.ps-summary-muted {
+  color: #959595;
+}
+
+.ps-arrow-combo {
+  display: inline-flex;
+  gap: 0.1rem;
+  min-width: 1.4rem;
+}
+
+.arrow-icon {
+  font-size: 0.7rem;
+}
+
+.arrow-pink {
+  color: #f772ee;
+}
+
+.arrow-orange {
+  color: #ffbf00;
+}
+
+.ps-summary-footer {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-top: 0.4rem;
+}
+
+.ps-summary-plantype {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 0.15rem;
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.history-table th {
+  text-align: center;
+  font-weight: 700;
+  padding: 0.2rem;
+}
+
+.history-table td {
+  text-align: center;
+  padding: 0.15rem 0.2rem;
+  font-weight: 700;
+}
+
+.history-table td:first-child {
+  text-align: left;
+  font-weight: 600;
+}
+
+.pct-red {
+  color: #ff0000;
+}
+
+.pct-yellow {
+  color: #ffbf00;
+}
+
+.pct-green {
+  color: #98d046;
+}
+
+.fixovat-cell {
+  position: relative;
+}
+
+.plan-arrow {
+  font-size: 0.9rem;
+}
+
+.plan-arrow-pink {
+  color: #f772ee;
+}
+
+.plan-arrow-orange {
+  color: #ffbf00;
+}
+
+.doc-icon-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-right: 0.3rem;
+  padding: 0;
+  font-size: 1em;
+}
+
+.jobsuffix-link,
+.item-link {
+  cursor: pointer;
+}
+
+.jobsuffix-link:hover,
+.item-link:hover {
+  text-decoration: underline;
+}
+
+.status-button {
+  border: none;
+  background: transparent;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.status-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.status-button-orange {
+  background: #ffa500;
+  color: #fff;
+}
+
+.status-button-red {
+  background: #ff0000;
+  color: #fff;
+}
+
+/* --- Fáze 2: Detail operace / Sériová čísla / Divergence / X-suffix --- */
+
+.detail-vp-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 25;
+  padding: 3vh 3vw;
+}
+
+.detail-vp-overlay {
+  border: 2px solid #98d046;
+  border-radius: 6px;
+  background: #e3eaf3;
+  padding: 0.6rem 0.75rem;
+  width: 100%;
+  max-width: 1200px;
+  max-height: 94vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.detail-vp-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.detail-vp-header .icon-button {
+  margin-left: auto;
+}
+
+.detail-vp-label {
+  color: #333;
+  font-weight: 600;
+}
+
+.row-detail-active {
+  background: rgba(153, 207, 236, 0.5);
+}
+
+.detail-dimmed {
+  opacity: 0.35;
+}
+
+.detail-desc-col {
+  white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  max-width: 320px;
+}
+
+.side-list-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: min(220px, 90vw);
+  background: #fdead1;
+  border-left: 2px solid #dbdbdb;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+.side-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.side-list-header h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.side-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.side-list li {
+  padding: 0.3rem 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.side-list-empty {
+  color: #777;
+  font-style: italic;
+}
+
+.divergence-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+}
+
+.divergence-popup {
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  padding: 1rem;
+  width: min(520px, 90vw);
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.divergence-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.divergence-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.divergence-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.85rem;
+}
+
+.divergence-list li {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.divergence-num {
+  color: #d73a3c;
+  font-weight: 700;
+  min-width: 3rem;
+}
+
+.divergence-list a {
+  word-break: break-all;
+}
+
+/* --- Vyhodnocení: filtry (3 sloupce), souhrn, graf, historie, druhy grid --- */
+
+.ps-filter-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0.5rem;
+}
+
+.ps-filter-grid-3 input[type="date"] {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.3rem;
+}
+
+.ps-summary-grid-1col {
+  grid-template-columns: 1fr;
+}
+
+.arrow-grey {
+  color: #a0a0a0;
+}
+
+.eval-graph {
+  margin-top: 0.6rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  padding-top: 0.5rem;
+}
+
+.eval-graph h3 {
+  margin: 0 0 0.4rem;
+  font-size: 0.85rem;
+}
+
+.eval-bar {
+  position: relative;
+  display: flex;
+  height: 16px;
+  width: 100%;
+  background: #eee;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.eval-bar-segment {
+  height: 100%;
+}
+
+.eval-vyrobeno {
+  background: #f772ee;
+}
+
+.eval-nadplan {
+  background: #ffbf00;
+}
+
+.eval-mimoplan {
+  background: #cacaca;
+}
+
+.eval-bar-cap-marker {
+  position: absolute;
+  top: -3px;
+  width: 2px;
+  height: 22px;
+  background: #000;
+}
+
+.eval-legend {
+  display: flex;
+  gap: 0.9rem;
+  font-size: 0.68rem;
+  margin-top: 0.35rem;
+  color: #555;
+}
+
+.eval-swatch {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 0.25rem;
+}
+
+.eval-history-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.2rem 0;
+}
+
+.section-title {
+  font-size: 1rem;
+  margin: 0.5rem 0 0;
+}
+
+.overplan-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ffbf00;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  /* Omezena vyska + vlastni vertikalni scroll - "position: sticky" na th tak
+     spolehlive drzi hlavicku nahore uvnitr tohoto boxu (rolujou jen radky),
+     bez ohledu na overflow/vysku predku nekde vys ve strankovem layoutu. */
+  overflow-y: auto;
+  max-height: 65vh;
+  border: 1px solid #dbdbdb;
+  border-radius: 6px;
+}
+
+.workplan-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.workplan-table th,
+.workplan-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+
+.workplan-table th {
+  background: #fafafa;
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.workplan-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sort-icon {
+  display: inline-block;
+  font-size: 0.75em;
+}
+
+.sort-icon-inactive {
+  color: #b7bcc7;
+}
+
+.sort-icon-active {
+  color: #000;
+}
+
+.workplan-table td.num {
+  text-align: center;
+}
+
+.workplan-table td.center {
+  text-align: center;
+}
+
+.oper-num-cell {
+  cursor: pointer;
+  font-weight: 600;
+  text-align: center;
+  position: relative;
+}
+
+.mprio-flag {
+  color: #ff0000;
+  font-weight: 700;
+  margin-left: 0.25rem;
+}
+
+.razeno-flag {
+  color: #fac9cd;
+  font-weight: 700;
+  margin-left: 0.35rem;
+}
+
+.delay-cell.delay-yellow {
+  background: #ffbf00;
+}
+
+.delay-cell.delay-red {
+  background: #ff0000;
+  color: #fff;
+}
+
+.text-selected {
+  color: rgba(67, 196, 102, 0.9);
+  font-weight: 600;
+}
+
+.row-move-blue {
+  background: rgba(180, 214, 250, 0.5);
+}
+
+.row-move-orange {
+  background: rgba(253, 222, 207, 0.5);
+}
+
+.empty-row {
+  text-align: center;
+  color: #888;
+  padding: 1rem;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.icon-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.status-ok {
+  color: #6ec24f;
+}
+
+.status-error {
+  color: #de2121;
+}
+
+.status-warning {
+  color: #ffbf00;
+}
+
+.warning-icon {
+  color: #000;
+}
+
+.warning-icon-active {
+  color: #de2121;
+}
+
+.reason-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: min(360px, 90vw);
+  background: #f1f4f9;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+.reason-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.reason-panel-header h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.reason-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.reason-readonly {
+  background: rgba(220, 220, 220, 0.4);
+  padding: 0.35rem;
+  border-radius: 4px;
+  font-weight: 400;
+}
+
+.reason-hint {
+  color: #d32f2f;
+  font-size: 0.75rem;
+}
+
+.reason-error {
+  color: #d32f2f;
+  font-size: 0.8rem;
+}
+
+.primary-button {
+  background: #36b04b;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- Mobilni layout ---
+   Rozliseni podle sirky viewportu (media query), ne podle User-Agent/typu zarizeni -
+   to je standardni pristup pro responzivni web (funguje stejne pro uzke okno na
+   desktopu jako pro telefon a nezavisi na tom, jak se prohlizec identifikuje).
+   768px odpovida beznemu zlomu mobil/tablet (stejny jako Bootstrap "md").
+
+   Poradi karet Filtry / Aktualni data (resp. Vyhodnoceni planu) / Historie a pak
+   tabulka(y) uz odpovida poradi v JSX - stacilo zrusit sloupce .ps-header-grid,
+   zbytek jsou jen doplnkove upravy, at se prvky pod sebou vejdou a nic neprevisa. */
+@media (max-width: 768px) {
+  .app-content {
+    padding: 0.5rem;
+  }
+
+  .app-nav {
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+  }
+
+  .app-nav-logo {
+    height: 22px;
+  }
+
+  .app-nav-logo-vendor {
+    height: 26px;
+  }
+
+  .ps-header-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ps-card h1 {
+    white-space: normal;
+  }
+
+  .ps-title-search-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+
+  .ps-toggle-row {
+    margin-left: 0;
+    justify-content: space-between;
+  }
+
+  .search-field input {
+    width: 100%;
+  }
+
+  .ps-filter-grid,
+  .ps-filter-grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ps-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ps-summary-footer,
+  .eval-legend,
+  .pagination {
+    flex-wrap: wrap;
+  }
+
+  .detail-vp-backdrop {
+    padding: 1.5vh 2vw;
+  }
 }
