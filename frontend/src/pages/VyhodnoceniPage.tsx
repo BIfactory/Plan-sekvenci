@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../api/client";
 import type { NodeDefinition, OverPlanItem, ProducedItem, ProducedSummary } from "../api/types";
 import { useStaleDataWarning } from "../hooks/useStaleDataWarning";
 import { useAutoRefresh } from "../hooks/useAutoRefresh";
 import { useClientSettings } from "../hooks/useClientSettings";
+import { useNavSlot } from "../hooks/useNavSlot";
 import { usePersistedNodeFilters } from "../hooks/usePersistedNodeFilters";
 import RefreshBar from "../components/RefreshBar";
 import ReasonPanel from "../components/ReasonPanel";
@@ -20,6 +22,7 @@ function distinctSorted(values: (string | null | undefined)[]): string[] {
 export default function VyhodnoceniPage() {
   const stale = useStaleDataWarning();
   const clientSettings = useClientSettings();
+  const navSlot = useNavSlot();
 
   const [nodes, setNodes] = useState<NodeDefinition[]>([]);
   const [reasons, setReasons] = useState<string[]>([]);
@@ -121,7 +124,16 @@ export default function VyhodnoceniPage() {
 
   return (
     <section className="plan-page">
-      <div className="ps-header-grid">
+      {navSlot && createPortal(
+        <RefreshBar
+          lastSync={lastSync}
+          onRefresh={handleRefresh}
+          showWarning={stale.showWarning}
+          refreshing={loading}
+        />,
+        navSlot,
+      )}
+      <div className="ps-header-grid ps-header-grid-eval">
         <div className="ps-card ps-filters-card">
           <h1>Vyhodnocení</h1>
           <div className="ps-filter-grid ps-filter-grid-3">
@@ -144,51 +156,46 @@ export default function VyhodnoceniPage() {
           </div>
         </div>
 
-        <div className="ps-card ps-summary-card">
-          <div className="ps-card-header">
-            <h2>Vyhodnocení plánu</h2>
-            <RefreshBar
-              lastSync={lastSync}
-              onRefresh={handleRefresh}
-              canRefresh={stale.canRefresh}
-              showWarning={stale.showWarning}
-              refreshing={loading}
-            />
-          </div>
-          <div className="ps-summary-grid ps-summary-grid-1col">
-            <div className="ps-summary-cell">
-              <span className="arrow-icon arrow-pink">➜</span>
-              <span className="ps-summary-label">Celkem v plánu</span>
-              <span>: {formatHod(summary?.planHod)}</span>
+        <div className="ps-eval-row">
+          <div className="ps-card ps-summary-card">
+            <div className="ps-card-header">
+              <h2>Vyhodnocení plánu</h2>
             </div>
-            <div className="ps-summary-cell">
-              <span className="arrow-icon arrow-pink">➜</span>
-              <span className="ps-summary-label">Vyrobeno</span>
-              <span>: {formatHod(summary?.producedInPlanHod)}</span>
+            <div className="ps-summary-grid ps-summary-grid-1col">
+              <div className="ps-summary-cell">
+                <span className="arrow-icon arrow-pink">➜</span>
+                <span className="ps-summary-label">Celkem v plánu</span>
+                <span>: {formatHod(summary?.planHod)}</span>
+              </div>
+              <div className="ps-summary-cell">
+                <span className="arrow-icon arrow-pink">➜</span>
+                <span className="ps-summary-label">Vyrobeno</span>
+                <span>: {formatHod(summary?.producedInPlanHod)}</span>
+              </div>
+              <div className="ps-summary-cell">
+                <span className="arrow-icon arrow-orange">➜</span>
+                <span className="ps-summary-label">Nad plán</span>
+                <span>: {formatHod(summary?.producedOverPlanHod)}</span>
+              </div>
+              <div className="ps-summary-cell">
+                <span className="arrow-icon arrow-grey">➜</span>
+                <span className="ps-summary-label">Mimo plán</span>
+                <span>: {formatHod(summary?.producedOutOfPlanHod)}</span>
+              </div>
             </div>
-            <div className="ps-summary-cell">
-              <span className="arrow-icon arrow-orange">➜</span>
-              <span className="ps-summary-label">Nad plán</span>
-              <span>: {formatHod(summary?.producedOverPlanHod)}</span>
+            <div className="ps-summary-footer">
+              <span>Kapacita: {formatHod(summary?.capacityHod)}</span>
             </div>
-            <div className="ps-summary-cell">
-              <span className="arrow-icon arrow-grey">➜</span>
-              <span className="ps-summary-label">Mimo plán</span>
-              <span>: {formatHod(summary?.producedOutOfPlanHod)}</span>
-            </div>
-          </div>
-          <div className="ps-summary-footer">
-            <span>Kapacita: {formatHod(summary?.capacityHod)}</span>
           </div>
 
-          <div className="eval-graph">
+          <div className="ps-card ps-graph-card">
             <h3>Graf vyhodnocení</h3>
-            <div className="eval-bar">
-              <div className="eval-bar-segment eval-vyrobeno" style={{ width: pct(summary?.producedInPlanHod, barBasis) }} title="vyrobeno" />
-              <div className="eval-bar-segment eval-nadplan" style={{ width: pct(summary?.producedOverPlanHod, barBasis) }} title="nad plán" />
-              <div className="eval-bar-segment eval-mimoplan" style={{ width: pct(summary?.producedOutOfPlanHod, barBasis) }} title="mimo plán" />
+            <div className="eval-bar-vertical">
+              <div className="eval-bar-segment-v eval-vyrobeno" style={{ height: pct(summary?.producedInPlanHod, barBasis) }} title="vyrobeno" />
+              <div className="eval-bar-segment-v eval-nadplan" style={{ height: pct(summary?.producedOverPlanHod, barBasis) }} title="nad plán" />
+              <div className="eval-bar-segment-v eval-mimoplan" style={{ height: pct(summary?.producedOutOfPlanHod, barBasis) }} title="mimo plán" />
               {summary?.capacityHod !== null && summary?.capacityHod !== undefined && (
-                <div className="eval-bar-cap-marker" style={{ left: pct(summary.capacityHod, barBasis) }} title={`kapacita: ${summary.capacityHod} hod`} />
+                <div className="eval-bar-cap-marker-v" style={{ bottom: pct(summary.capacityHod, barBasis) }} title={`kapacita: ${summary.capacityHod} hod`} />
               )}
             </div>
             <div className="eval-legend">

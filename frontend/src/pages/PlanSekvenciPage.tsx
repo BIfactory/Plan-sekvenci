@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { api } from "../api/client";
 import type {
   DivergenceItem,
@@ -13,6 +14,7 @@ import { useMe } from "../hooks/useMe";
 import { useStaleDataWarning } from "../hooks/useStaleDataWarning";
 import { useAutoRefresh } from "../hooks/useAutoRefresh";
 import { useClientSettings } from "../hooks/useClientSettings";
+import { useNavSlot } from "../hooks/useNavSlot";
 import { usePersistedNodeFilters } from "../hooks/usePersistedNodeFilters";
 import RefreshBar from "../components/RefreshBar";
 import ReasonPanel from "../components/ReasonPanel";
@@ -35,6 +37,7 @@ export default function PlanSekvenciPage() {
   const me = useMe();
   const stale = useStaleDataWarning();
   const clientSettings = useClientSettings();
+  const navSlot = useNavSlot();
 
   const [nodes, setNodes] = useState<NodeDefinition[]>([]);
   const [reasons, setReasons] = useState<string[]>([]);
@@ -289,6 +292,15 @@ export default function PlanSekvenciPage() {
 
   return (
     <section className="plan-page">
+      {navSlot && createPortal(
+        <RefreshBar
+          lastSync={lastSync}
+          onRefresh={handleRefresh}
+          showWarning={stale.showWarning}
+          refreshing={loading}
+        />,
+        navSlot,
+      )}
       <div className="ps-header-grid">
         <div className="ps-card ps-filters-card">
           <div className="ps-title-search-row">
@@ -323,13 +335,6 @@ export default function PlanSekvenciPage() {
         <div className="ps-card ps-summary-card">
           <div className="ps-card-header">
             <h2>Aktuální data</h2>
-            <RefreshBar
-              lastSync={lastSync}
-              onRefresh={handleRefresh}
-              canRefresh={stale.canRefresh}
-              showWarning={stale.showWarning}
-              refreshing={loading}
-            />
           </div>
           <div className="ps-summary-grid">
             <ArrowCombo colors={["pink", "orange"]} value={formatHod(nodeSummary?.hodPlanSkluz)} />
@@ -406,12 +411,12 @@ export default function PlanSekvenciPage() {
               </th>
               <th>Hod</th>
               <th>Popis operace</th>
-              <th>Přijato</th>
-              <th>Hotovo</th>
-              <th>Zbývá</th>
+              <th>Přijato [ks]</th>
+              <th>Hotovo [ks]</th>
+              <th>Zbývá [ks]</th>
               <th>Sequence date</th>
               <th className="sortable" onClick={() => handleToggleSort("delay")}>
-                Delay <SortIcon active={sort === "delay"} dir={sortDir} />
+                Delay [dny] <SortIcon active={sort === "delay"} dir={sortDir} />
               </th>
               <th>Status</th>
             </tr>
@@ -475,7 +480,7 @@ export default function PlanSekvenciPage() {
                 >
                   {formatDate(row.sequenceDateTime)}
                 </td>
-                <td className={"num delay-cell " + delayClass(row.delay)} title={row.moveTime ? `Čas přesunu: ${row.moveTime}` : undefined}>
+                <td className={"num delay-cell " + delayClass(row.delay, row.sequenceDateTime)} title={row.moveTime ? `Čas přesunu: ${row.moveTime}` : undefined}>
                   {row.delay && row.delay > 0 ? row.delay : ""}
                 </td>
                 <td className="center">
@@ -631,11 +636,25 @@ function formatDate(value: string | null): string {
   return d.toLocaleDateString("cs-CZ");
 }
 
-function delayClass(delay: number | null): string {
+// Barevne pozadi bunky Delay se pouzije jen u polozek, jejichz Sequence date uz je
+// v minulosti (< dnesek) - u budoucich datumu zustava bunka bez barvy bez ohledu na
+// hodnotu delay (upresneno uzivatelem, puvodni appka toto rozliseni nemela).
+function delayClass(delay: number | null, sequenceDateTime: string | null): string {
   if (delay === null || delay === undefined) return "";
+  if (!isBeforeToday(sequenceDateTime)) return "";
   if (delay > 3) return "delay-red";
   if (delay > 1) return "delay-yellow";
   return "";
+}
+
+function isBeforeToday(dateStr: string | null): boolean {
+  if (!dateStr) return false;
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return false;
+  const dateOnly = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return dateOnly < today;
 }
 
 function fade(hex: string): string {

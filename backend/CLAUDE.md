@@ -54,7 +54,10 @@
     `SaveChangesAsync`). Čtení přes `GET /api/audit-log` (`AuditLogController`,
     jen approveři) – filtrovatelné podle `entityId`/`entityType`/`from`/`to`, zatím bez
     vlastní frontendové obrazovky (jde čistě o API/DB vrstvu, dostupnou i pro budoucí
-    admin UI nebo přímý dotaz do DB).
+    admin UI nebo přímý dotaz do DB). Zápis jde vypnout v `appsettings.json` (sekce
+    `AuditLog:Enabled`, `AuditLogOptions.cs`, výchozí `true`) – `AuditLogService.Log()`
+    je při `Enabled: false` no-op (nic nepřidá do change trackeru), čtení přes
+    `GET /api/audit-log` zůstává funkční i vypnuté (jen nepřibývají nové záznamy).
 
 ## Konvence psaní kódu
 

@@ -34,6 +34,9 @@ builder.Services.Configure<ApproverOptions>(
 builder.Services.Configure<ClientSettingsOptions>(
     builder.Configuration.GetSection(ClientSettingsOptions.SectionName));
 
+builder.Services.Configure<AuditLogOptions>(
+    builder.Configuration.GetSection(AuditLogOptions.SectionName));
+
 // DevApproverService obchazi AD/LDAP (viz Authorization:BypassAdInDevelopment v
 // appsettings.Development.json) - jen pro pripady, kdy AD neni z vyvojoveho stroje
 // dosazitelny. Bezpecnostne neskodne, protoze vyzaduje i IsDevelopment().

@@ -79,8 +79,13 @@ select {
   text-decoration: underline;
 }
 
-.app-nav-logos {
+.app-nav-refresh {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+}
+
+.app-nav-logos {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -155,6 +160,13 @@ select {
   grid-template-columns: minmax(0, 2.1fr) minmax(0, 1.15fr) minmax(0, 0.85fr);
   gap: 0.75rem;
   align-items: start;
+}
+
+/* Vyhodnoceni - stredni sloupec musi pojmout dve karty vedle sebe (ps-eval-row),
+   proto potrebuje vic mista nez na strance Plan sekvenci (soucet dilu zustava 4.1,
+   jen jinak rozdeleny). */
+.ps-header-grid-eval {
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1.6fr) minmax(0, 0.8fr);
 }
 
 .ps-card {
@@ -635,29 +647,51 @@ select {
   color: #a0a0a0;
 }
 
-.eval-graph {
-  margin-top: 0.6rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-  padding-top: 0.5rem;
+/* Vyhodnoceni plánu + Graf vyhodnoceni vedle sebe (misto puvodniho stackovani grafu
+   pod summary kartou) - viz ps-header-grid-eval nize pro sirsi stredni sloupec.
+   align-items: flex-start - graf ma byt zmenseny na (co nejblize) prirozenou
+   minimalni vysku ps-summary-card, ne naopak natahovat summary kartu na vysku grafu
+   (viz zmenseny .eval-bar-vertical nize). */
+.ps-eval-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
 }
 
-.eval-graph h3 {
-  margin: 0 0 0.4rem;
+.ps-eval-row .ps-summary-card {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ps-graph-card {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ps-graph-card h3 {
+  align-self: flex-start;
+  margin: 0 0 0.5rem;
   font-size: 0.85rem;
 }
 
-.eval-bar {
+/* Sloupcovy graf (otoceny o 90° oproti puvodnimu horizontalnimu baru) - segmenty se
+   stackuji odspodu pomoci column-reverse (poradi v DOM = vyrobeno/nadplan/mimoplan
+   odpovida puvodnimu poradi zleva doprava, ted zdola nahoru). */
+.eval-bar-vertical {
   position: relative;
   display: flex;
-  height: 16px;
-  width: 100%;
+  flex-direction: column-reverse;
+  width: 48px;
+  height: 80px;
   background: #eee;
   border-radius: 3px;
   overflow: hidden;
 }
 
-.eval-bar-segment {
-  height: 100%;
+.eval-bar-segment-v {
+  width: 100%;
 }
 
 .eval-vyrobeno {
@@ -672,11 +706,11 @@ select {
   background: #cacaca;
 }
 
-.eval-bar-cap-marker {
+.eval-bar-cap-marker-v {
   position: absolute;
-  top: -3px;
-  width: 2px;
-  height: 22px;
+  left: -3px;
+  width: calc(100% + 6px);
+  height: 2px;
   background: #000;
 }
 
@@ -988,6 +1022,15 @@ select {
   .eval-legend,
   .pagination {
     flex-wrap: wrap;
+  }
+
+  .ps-eval-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ps-graph-card {
+    align-items: center;
   }
 
   .detail-vp-backdrop {
