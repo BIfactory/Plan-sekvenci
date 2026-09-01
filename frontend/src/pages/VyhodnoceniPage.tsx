@@ -11,8 +11,20 @@ import RefreshBar from "../components/RefreshBar";
 import ReasonPanel from "../components/ReasonPanel";
 import FilterSelect from "../components/FilterSelect";
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
+// yyyy-MM-dd z lokalnich casti data (ne toISOString(), ktera prevadi na UTC a v nocnich
+// hodinach by mohla vratit jiny den nez je aktualne lokalne).
+function toDateInputValue(d: Date): string {
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${month}-${day}`;
+}
+
+// PRD 6.2 / Vyhodnocení.pa.yaml (filter_date.SelectedDate): vychozi vybrane datum je
+// "vcera", ne dnesek.
+function yesterday(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return toDateInputValue(d);
 }
 
 function distinctSorted(values: (string | null | undefined)[]): string[] {
@@ -30,7 +42,10 @@ export default function VyhodnoceniPage() {
   const [summary, setSummary] = useState<ProducedSummary | null>(null);
   const [overPlan, setOverPlan] = useState<OverPlanItem[]>([]);
 
-  const [date, setDate] = useState(today());
+  const [date, setDate] = useState(yesterday());
+  // PRD 6.2 / Vyhodnocení.pa.yaml (filter_date.StartDate/EndDate) - vyber datumu je
+  // omezeny na rozsah z v_calendar_last_3_workdays (nejstarsi..nejnovejsi).
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
   const { plant, setPlant, dept, setDept, teamLeader, setTeamLeader, node, setNode, rgid, setRgid } =
     usePersistedNodeFilters(clientSettings.filterCookieExpiryDays);
   const [rgidOptions, setRgidOptions] = useState<string[]>([]);
@@ -61,6 +76,11 @@ export default function VyhodnoceniPage() {
   );
   const params = useMemo(() => ({ date, node: node || undefined, rgid: rgid || undefined }), [date, node, rgid]);
 
+  // availableDates je serazene sestupne (viz ReferenceService.GetAvailableDatesAsync)
+  // - prvni polozka je nejnovejsi datum, posledni nejstarsi.
+  const minDate = availableDates.length > 0 ? availableDates[availableDates.length - 1] : undefined;
+  const maxDate = availableDates.length > 0 ? availableDates[0] : undefined;
+
   const loadProduced = useCallback(() => {
     setLoading(true);
     setError(null);
@@ -87,6 +107,7 @@ export default function VyhodnoceniPage() {
     api.nodes().then(setNodes);
     api.reasons().then(setReasons);
     api.lastSync().then((r) => setLastSync(r.startTime));
+    api.availableDates().then(setAvailableDates);
   }, []);
 
   useEffect(() => {
@@ -139,7 +160,7 @@ export default function VyhodnoceniPage() {
           <div className="ps-filter-grid ps-filter-grid-3">
             <label className="filter-select-field">
               <span className="filter-select-label">Datum</span>
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <input type="date" value={date} min={minDate} max={maxDate} onChange={(e) => setDate(e.target.value)} />
             </label>
             <FilterSelect label="Provoz" value={plant} options={plantOptions} onChange={setPlant} />
             <FilterSelect label="Dílna" value={dept} options={deptOptions} onChange={setDept} />
@@ -244,7 +265,10 @@ export default function VyhodnoceniPage() {
           <tbody>
             {items.map((row) => (
               <tr key={row.id}>
-                <td className="center">{statusIcon(row)}</td>
+                <td className="center">
+                  {statusIcon(row)}
+                  {row.prio === 1 && <span className="mprio-flag">P</span>}
+                </td>
                 <td title={row.rgid ?? undefined}>{row.idJobSuffixOper}</td>
                 <td>{row.item}</td>
                 <td className="num">{round(row.hodPlan, 2)}</td>
@@ -293,7 +317,10 @@ export default function VyhodnoceniPage() {
           <tbody>
             {overPlan.map((row) => (
               <tr key={row.id}>
-                <td className="center">{row.status === 3 && <span className="overplan-dot" />}</td>
+                <td className="center">
+                  {row.status === 3 && <span className="overplan-dot" />}
+                  {row.prio === 1 && <span className="mprio-flag">P</span>}
+                </td>
                 <td>{row.idJobSuffixOper}</td>
                 <td>{row.item}</td>
                 <td className="num">{round(row.hodProduced, 1)}</td>

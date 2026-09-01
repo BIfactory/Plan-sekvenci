@@ -7,15 +7,13 @@ namespace PlanSekvenci.Api.Authorization;
 public class ApproverAuthorizationHandler(IApproverService approverService)
     : AuthorizationHandler<ApproverRequirement>
 {
-    protected override Task HandleRequirementAsync(
+    protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
         ApproverRequirement requirement)
     {
-        if (approverService.IsApprover(context.User))
+        if (await approverService.IsApproverAsync(context.User))
         {
             context.Succeed(requirement);
         }
-
-        return Task.CompletedTask;
     }
 }

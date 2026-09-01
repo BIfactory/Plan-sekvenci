@@ -12,7 +12,7 @@ public class DevApproverService(ILogger<DevApproverService> logger) : IApproverS
 {
     private bool _warned;
 
-    public bool IsApprover(ClaimsPrincipal user)
+    public Task<bool> IsApproverAsync(ClaimsPrincipal user)
     {
         if (!_warned)
         {
@@ -22,6 +22,6 @@ public class DevApproverService(ILogger<DevApproverService> logger) : IApproverS
             _warned = true;
         }
 
-        return true;
+        return Task.FromResult(true);
     }
 }

@@ -64,6 +64,13 @@ public record SetSelectedRequest(bool Selected);
 // pole Reason navic musi odpovidat ciselniku dim_workplan_reasons (viz
 // WorkplanService/ProducedService.SubmitReasonAsync - MaxLength sama o sobe neresi
 // platnost hodnoty, jen jeji delku).
+//
+// Atributy bez "property:" cile - na record primary konstruktoru je musi videt i
+// samotny parametr konstruktoru (ne jen vygenerovana property), jinak ASP.NET Core
+// validace pro record DTO metadata tise ignoruje (viz t_log_powerapp: "validation
+// metadata ... will be ignored ... must be associated with the constructor parameter").
+// C# atribut bez cile se u pozicniho record parametru aplikuje na obojí (parametr i
+// property), pokud to AttributeUsage povoluje - MaxLengthAttribute povoluje Parameter.
 public record SubmitReasonRequest(
-    [property: MaxLength(100)] string? Reason,
-    [property: MaxLength(600)] string? Note);
+    [MaxLength(100)] string? Reason,
+    [MaxLength(600)] string? Note);

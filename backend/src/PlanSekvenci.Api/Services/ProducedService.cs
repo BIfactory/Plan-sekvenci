@@ -55,7 +55,7 @@ public class ProducedService(BiAppDbContext db, AuditLogService auditLog)
             .ThenBy(x => x.IdJobSuffixOper)
             .ToListAsync(ct);
 
-        return rows.Select(x => new OverPlanItemDto(x.Id, x.IdJobSuffixOper, x.Item, x.Status, x.StatusDesc, x.SequenceDateTime, x.HodProduced, x.QtyDone)).ToList();
+        return rows.Select(x => new OverPlanItemDto(x.Id, x.IdJobSuffixOper, x.Item, x.Status, x.StatusDesc, x.SequenceDateTime, x.HodProduced, x.QtyDone, x.Prio)).ToList();
     }
 
     // Panel "Vyhodnoceni planu:" + "Graf vyhodnoceni" (Vyhodnocení.pa.yaml, Group10) -
@@ -176,6 +176,7 @@ public class ProducedService(BiAppDbContext db, AuditLogService auditLog)
         x.ReasonLastUpdateBy,
         x.ReasonEnabled,
         x.Rgid,
-        x.SelectedOper
+        x.SelectedOper,
+        x.Prio
     );
 }

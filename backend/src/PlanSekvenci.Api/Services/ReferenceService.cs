@@ -25,6 +25,13 @@ public class ReferenceService(BiAppDbContext db)
         return new LastSyncDto(row?.StartTime);
     }
 
+    // Rozsah pro filtr "Datum" na Vyhodnoceni (PRD 6.2) - viz CalendarLastWorkday.cs.
+    public async Task<IReadOnlyList<DateOnly>> GetAvailableDatesAsync(CancellationToken ct) =>
+        await db.CalendarLastWorkdays.AsNoTracking()
+            .Select(x => x.Date)
+            .OrderByDescending(x => x)
+            .ToListAsync(ct);
+
     // Panel "Aktualni data" (viz Plán sekvencí.pa.yaml, Group1) - agregace za vybrany
     // uzel + vypocet kapacity (RGID-uroven u CNC pracovist, jinak node-uroven).
     public async Task<NodeSummaryDto> GetNodeSummaryAsync(string? node, string? rgid, CancellationToken ct)

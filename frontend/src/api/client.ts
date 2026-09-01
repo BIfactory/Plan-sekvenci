@@ -63,6 +63,7 @@ export const api = {
   nodes: () => request<NodeDefinition[]>("/reference/nodes"),
   reasons: () => request<string[]>("/reference/reasons"),
   lastSync: () => request<LastSync>("/reference/last-sync"),
+  availableDates: () => request<string[]>("/reference/available-dates"),
   nodeSummary: (node?: string, rgid?: string) =>
     request<NodeSummary>(`/reference/node-summary${buildQuery({ node, rgid })}`),
   saHistory: (node?: string) =>

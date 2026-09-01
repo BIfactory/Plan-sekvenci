@@ -30,6 +30,9 @@ public class BiAppDbContext(DbContextOptions<BiAppDbContext> options) : DbContex
     // Fáze 3 - audit log editaci (viz WorkplanAuditLog.cs, backend/sql/t_workplan_audit_log.sql).
     public DbSet<WorkplanAuditLog> WorkplanAuditLogs => Set<WorkplanAuditLog>();
 
+    // Filtr "Datum" na Vyhodnoceni (PRD 6.2) - viz CalendarLastWorkday.cs.
+    public DbSet<CalendarLastWorkday> CalendarLastWorkdays => Set<CalendarLastWorkday>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<WorkplanInput>(e =>
@@ -130,6 +133,12 @@ public class BiAppDbContext(DbContextOptions<BiAppDbContext> options) : DbContex
         {
             e.HasKey(x => x.Id);
             e.Property(x => x.Id).ValueGeneratedOnAdd();
+        });
+
+        modelBuilder.Entity<CalendarLastWorkday>(e =>
+        {
+            e.HasNoKey();
+            e.ToView("v_calendar_last_3_workdays");
         });
     }
 }

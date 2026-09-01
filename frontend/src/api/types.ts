@@ -142,6 +142,7 @@ export interface ProducedItem {
   reasonEnabled: number | null;
   rgid: string | null;
   selectedOper: number | null;
+  prio: number | null;
 }
 
 // Panel "Vyhodnocení nad plán nebo mimo plán" (druhý grid, PRD 6.5 souvislosti).
@@ -154,6 +155,7 @@ export interface OverPlanItem {
   sequenceDateTime: string | null;
   hodProduced: number | null;
   qtyDone: number | null;
+  prio: number | null;
 }
 
 // Panel "Vyhodnocení plánu:" + "Graf vyhodnocení".

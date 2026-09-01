@@ -4,5 +4,5 @@ namespace PlanSekvenci.Api.Authorization;
 
 public interface IApproverService
 {
-    bool IsApprover(ClaimsPrincipal user);
+    Task<bool> IsApproverAsync(ClaimsPrincipal user);
 }

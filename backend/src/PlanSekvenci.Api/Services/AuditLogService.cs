@@ -13,6 +13,13 @@ namespace PlanSekvenci.Api.Services;
 // viz Configuration/AuditLogOptions.cs.
 public class AuditLogService(BiAppDbContext db, IOptions<AuditLogOptions> options)
 {
+    // old_value/new_value jsou nvarchar(600) (t_workplan_audit_log.sql). Pro fixed/
+    // selected jde vzdy o "True"/"False", ale pro reason skladame "reason: ... | note:
+    // ..." z uzivatelskeho textu (az 100 + 600 znaku) - bez oriznuti by SQL Server pri
+    // prekroceni 600 znaku shodil cely insert (a tim i celou transakci vcetne vlastni
+    // editace) vyjimkou "String or binary data would be truncated".
+    private const int MaxValueLength = 600;
+
     // Jen prida zaznam do change trackeru - volajici (WorkplanService/ProducedService)
     // ho uklada spolecne s vlastni zmenou v jedne transakci (PRD 4.5 - transakcni zapis).
     // Kdyz je AuditLog:Enabled = false, je to no-op (zadny radek se neprida).
@@ -31,10 +38,13 @@ public class AuditLogService(BiAppDbContext db, IOptions<AuditLogOptions> option
             EntityType = entityType,
             EntityId = entityId,
             Node = node,
-            OldValue = oldValue,
-            NewValue = newValue,
+            OldValue = Truncate(oldValue),
+            NewValue = Truncate(newValue),
         });
     }
+
+    private static string? Truncate(string? value) =>
+        value is not null && value.Length > MaxValueLength ? value[..MaxValueLength] : value;
 
     public async Task<IReadOnlyList<AuditLogEntryDto>> GetAsync(
         string? entityId, string? entityType, DateTime? from, DateTime? to, CancellationToken ct)

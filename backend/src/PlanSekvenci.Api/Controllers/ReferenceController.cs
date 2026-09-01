@@ -20,6 +20,10 @@ public class ReferenceController(ReferenceService referenceService) : Controller
     public async Task<ActionResult<LastSyncDto>> GetLastSync(CancellationToken ct) =>
         Ok(await referenceService.GetLastSyncAsync(ct));
 
+    [HttpGet("available-dates")]
+    public async Task<ActionResult<IReadOnlyList<DateOnly>>> GetAvailableDates(CancellationToken ct) =>
+        Ok(await referenceService.GetAvailableDatesAsync(ct));
+
     [HttpGet("node-summary")]
     public async Task<ActionResult<NodeSummaryDto>> GetNodeSummary([FromQuery] string? node, [FromQuery] string? rgid, CancellationToken ct) =>
         Ok(await referenceService.GetNodeSummaryAsync(node, rgid, ct));

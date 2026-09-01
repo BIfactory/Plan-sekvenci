@@ -20,7 +20,10 @@ public record ProducedItemDto(
     string? ReasonLastUpdateBy,
     int? ReasonEnabled,
     string? Rgid,
-    int? SelectedOper
+    int? SelectedOper,
+    // Priorita (PRD 6.4 doplnek) - "P" priznak ve sloupci Status, stejny jako mprio
+    // priznak na Plan sekvenci (viz Vyhodnocení.pa.yaml: If(ThisItem.prio = 1, "P", "")).
+    int? Prio
 );
 
 // Panel "Vyhodnoceni nad plan nebo mimo plan" (druhy grid, Gallery3_2 v puvodni
@@ -33,7 +36,8 @@ public record OverPlanItemDto(
     string? StatusDesc,
     DateTime? SequenceDateTime,
     double? HodProduced,
-    double? QtyDone
+    double? QtyDone,
+    int? Prio
 );
 
 // Panel "Vyhodnoceni planu:" + "Graf vyhodnoceni" - souhrn za vybrany den/uzel(/rgid).

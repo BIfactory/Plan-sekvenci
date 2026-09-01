@@ -12,9 +12,9 @@ namespace PlanSekvenci.Api.Controllers;
 public class AuthController(IApproverService approverService) : ControllerBase
 {
     [HttpGet("me")]
-    public ActionResult<MeDto> Me()
+    public async Task<ActionResult<MeDto>> Me()
     {
-        var isApprover = approverService.IsApprover(User);
+        var isApprover = await approverService.IsApproverAsync(User);
         return Ok(new MeDto(User.Identity?.Name, isApprover));
     }
 }

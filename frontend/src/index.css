@@ -290,7 +290,7 @@ select {
 .filter-clear-button {
   background: none;
   border: none;
-  color: #b7bcc7;
+  color: #555;
   cursor: pointer;
   font-size: 0.65rem;
   padding: 0;

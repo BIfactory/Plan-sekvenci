@@ -66,4 +66,8 @@ public class WorkplanProduced
 
     [Column("selected_oper")]
     public int? SelectedOper { get; set; }
+
+    // "P" priznak ve sloupci Status (Vyhodnocení.pa.yaml: If(ThisItem.prio = 1, "P", "")).
+    [Column("prio")]
+    public int? Prio { get; set; }
 }

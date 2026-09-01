@@ -114,6 +114,25 @@
   – sdílená mezi `ApproverAuthorizationHandler` (policy `Approver` na `[Authorize]`)
   a `AuthController.Me()` (`/api/auth/me`, pro frontend aby věděl, co zobrazit).
   **Server je vždy autoritativní** – frontendová kontrola je jen UX, ne bezpečnost.
+  `IApproverService.IsApproverAsync` je async (kvůli Graph API volání níže).
+- **`Authorization:ApproverAdGroupId` je Azure AD Object ID, ne on-prem AD `objectGUID`**
+  (potvrzeno v `Podklady/.../Src/App.pa.yaml` – originál volal
+  `Office365Groups.ListGroupMembers("a0b103b0-...")`, coz jde pres Microsoft Graph).
+  Prvni implementace to omylem hledala v on-prem AD pres
+  `System.DirectoryServices.AccountManagement` (`GroupPrincipal.FindByIdentity(...,
+  IdentityType.Guid, ...)`) – to skupinu nikdy nenajde (jiny GUID prostor), takze
+  `isGroupMember` bylo vzdy `false` pro kohokoliv (whitelist tim nebyl dotcen, proto
+  fungoval). Oprava: `Authorization/GraphGroupMembershipChecker.cs` overuje clenstvi
+  primo pres Microsoft Graph (`GET /users?$filter=mail eq '...'` → `POST
+  /users/{id}/checkMemberGroups`), `ApproverService` k tomu pouziva e-mail ziskany
+  z on-prem LDAP (`UserPrincipal.EmailAddress`, uz existovalo pro whitelist).
+  Vyzaduje Azure AD App Registration (client credentials flow, appka bezi bez
+  prihlaseneho uzivatele) s Application permissions **User.Read.All** +
+  **GroupMember.Read.All** (admin consent) a konfiguraci `AzureAd:TenantId/ClientId`
+  (verejne, v `appsettings.json`) + `AzureAd:ClientSecret` (tajne, jen
+  `appsettings.Development.json` / produkcni secret store - stejne pravidlo jako
+  `ConnectionStrings:BiApp`). Bez teto konfigurace `GraphGroupMembershipChecker` jen
+  zaloguje warning a vrati `false` (whitelist dal funguje nezavisle).
 - Approver-only endpointy (dle PRD sekce 7): `PATCH /api/workplan/{id}/fixed`,
   `POST /api/workplan/{id}/reason`. Ostatní zápisy (`selected`, produced reason)
   jsou otevřené všem přihlášeným uživatelům.

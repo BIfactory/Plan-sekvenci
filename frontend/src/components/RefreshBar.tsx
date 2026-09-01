@@ -2,6 +2,15 @@ import { useRef, useState } from "react";
 
 const CLICK_COOLDOWN_MS = 3000;
 
+// Format "d. M. yyyy h:mm" (bez sekund) - rucne slozeny z casti data, ne
+// toLocaleString(), aby vysledek byl deterministicky (bez carky pred casem a bez
+// vteřin, ktere by Intl v ruznych prohlizecich mohl formatovat jinak).
+function formatLastSync(value: string): string {
+  const d = new Date(value);
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${d.getDate()}. ${d.getMonth() + 1}. ${d.getFullYear()} ${d.getHours()}:${minutes}`;
+}
+
 interface RefreshBarProps {
   lastSync: string | null;
   onRefresh: () => void;
@@ -35,7 +44,7 @@ export default function RefreshBar({ lastSync, onRefresh, showWarning, refreshin
         ⟳ Refresh
       </button>
       {lastSync && (
-        <span className="last-sync">Poslední sync dat: {new Date(lastSync).toLocaleString("cs-CZ")}</span>
+        <span className="last-sync">Poslední sync dat: {formatLastSync(lastSync)}</span>
       )}
       {showWarning && (
         <span className="stale-warning">⚠ Aktualizuj aplikaci — klikni na refresh</span>
