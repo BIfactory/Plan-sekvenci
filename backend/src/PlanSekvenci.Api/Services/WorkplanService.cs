@@ -10,8 +10,23 @@ public class WorkplanService(BiAppDbContext db, AuditLogService auditLog)
     // Sloupce, na ktere smi uzivatel kliknout pro razeni (PRD 5.3) - vzdy sestupne.
     private static readonly HashSet<string> SortableColumns = new(StringComparer.OrdinalIgnoreCase)
     {
-        "skluz", "delay", "oper_num", "mprio", "hod", "sequence_date_time", "qty_todo", "in_plan"
+        "skluz", "delay", "oper_num", "mprio", "hod", "sequence_date_time", "qty_todo", "in_plan", "rank_all"
     };
+
+    // Vyhledavani v poli Polozka (PRD 5.2) - "*" jako wildcard na libovolnem miste
+    // retezce (prevede se na SQL LIKE "%"). Bez "*" se chova jako drive (implicitni
+    // "obsahuje", stejne jako puvodni Power Fx "in" operator).
+    private const string LikeEscapeCharString = "\\";
+
+    private static string BuildLikePattern(string input)
+    {
+        var escaped = input
+            .Replace(LikeEscapeCharString, LikeEscapeCharString + LikeEscapeCharString)
+            .Replace("%", LikeEscapeCharString + "%")
+            .Replace("_", LikeEscapeCharString + "_");
+
+        return escaped.Contains('*') ? escaped.Replace("*", "%") : $"%{escaped}%";
+    }
 
     public async Task<WorkplanListResultDto> GetAsync(WorkplanFilter filter, CancellationToken ct)
     {
@@ -70,7 +85,8 @@ public class WorkplanService(BiAppDbContext db, AuditLogService auditLog)
         }
         if (!string.IsNullOrEmpty(filter.Item))
         {
-            query = query.Where(x => x.Item != null && x.Item.Contains(filter.Item));
+            var itemPattern = BuildLikePattern(filter.Item);
+            query = query.Where(x => x.Item != null && EF.Functions.Like(x.Item, itemPattern, LikeEscapeCharString));
         }
 
         // Razeni dle PRD 5.3: bez filtru a bez zvoleneho sloupce -> skluz sestupne;
@@ -105,6 +121,8 @@ public class WorkplanService(BiAppDbContext db, AuditLogService auditLog)
                 ("qty_todo", true) => query.OrderBy(x => x.QtyTodo),
                 ("in_plan", false) => query.OrderByDescending(x => x.InPlan),
                 ("in_plan", true) => query.OrderBy(x => x.InPlan),
+                ("rank_all", false) => query.OrderByDescending(x => x.RankAll),
+                ("rank_all", true) => query.OrderBy(x => x.RankAll),
                 _ => query.OrderByDescending(x => x.Skluz),
             };
         }

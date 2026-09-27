@@ -9,30 +9,31 @@ namespace PlanSekvenci.Api.Authorization;
 // ApproverEmailWhitelist. Sdileno mezi ApproverAuthorizationHandler (policy na
 // [Authorize]) a AuthController (/api/auth/me pro frontend).
 //
-// Identita (email) se resi pres on-prem AD/LDAP (System.DirectoryServices), protoze
-// z toho appka uz potrebuje UserPrincipal kvuli whitelist kontrole a Windows identity
-// (DOMAIN\login) sama o sobe email neobsahuje. Samotna kontrola AD skupiny ale jde
-// pres Microsoft Graph (viz GraphGroupMembershipChecker) - ApproverAdGroupId je Azure
-// AD Object ID (puvodni appka volala Office365Groups.ListGroupMembers()), na LDAP
-// (on-prem objectGUID) se vubec nenajde.
+// ApproverAdGroupId je objectGUID on-prem AD bezpecnostni skupiny "USERS_Plan_sekvenci"
+// (potvrzeno se zakaznikem u dodavatele AD) - cela kontrola tak jde cistě pres LDAP,
+// bez zavislosti na Microsoft Graph/Azure AD App Registration. Puvodni appka volala
+// Office365Groups.ListGroupMembers() s Azure AD Object ID skupiny, ktery se na tento
+// on-prem objectGUID vubec nemapuje - prvni pokus o migraci proto omylem hledal
+// spatny identifikator (a pak docasne resil pres Graph API, nez se potvrdilo, ze
+// skupina ma i on-prem ekvivalent).
 [SupportedOSPlatform("windows")]
-public class ApproverService(IOptions<ApproverOptions> options, IGraphGroupMembershipChecker groupChecker) : IApproverService
+public class ApproverService(IOptions<ApproverOptions> options) : IApproverService
 {
     private readonly ApproverOptions _options = options.Value;
 
-    public async Task<bool> IsApproverAsync(ClaimsPrincipal user)
+    public Task<bool> IsApproverAsync(ClaimsPrincipal user)
     {
         var identityName = user.Identity?.Name;
         if (string.IsNullOrEmpty(identityName))
         {
-            return false;
+            return Task.FromResult(false);
         }
 
         using var domainContext = new PrincipalContext(ContextType.Domain);
         using var userPrincipal = UserPrincipal.FindByIdentity(domainContext, IdentityType.SamAccountName, identityName);
         if (userPrincipal is null)
         {
-            return false;
+            return Task.FromResult(false);
         }
 
         var isWhitelisted = !string.IsNullOrEmpty(userPrincipal.EmailAddress)
@@ -40,14 +41,17 @@ public class ApproverService(IOptions<ApproverOptions> options, IGraphGroupMembe
 
         if (isWhitelisted)
         {
-            return true;
+            return Task.FromResult(true);
         }
 
-        if (string.IsNullOrEmpty(_options.ApproverAdGroupId) || string.IsNullOrEmpty(userPrincipal.EmailAddress))
+        if (string.IsNullOrEmpty(_options.ApproverAdGroupId))
         {
-            return false;
+            return Task.FromResult(false);
         }
 
-        return await groupChecker.IsMemberOfGroupAsync(userPrincipal.EmailAddress, _options.ApproverAdGroupId);
+        using var group = GroupPrincipal.FindByIdentity(domainContext, IdentityType.Guid, _options.ApproverAdGroupId);
+        var isGroupMember = group is not null && userPrincipal.IsMemberOf(group);
+
+        return Task.FromResult(isGroupMember);
     }
 }

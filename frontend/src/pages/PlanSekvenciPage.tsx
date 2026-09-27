@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api } from "../api/client";
 import type {
@@ -8,7 +8,6 @@ import type {
   SaHistoryEntry,
   SequenceDetailHeader,
   WorkplanItem,
-  WorkplanListResult,
 } from "../api/types";
 import { useMe } from "../hooks/useMe";
 import { useStaleDataWarning } from "../hooks/useStaleDataWarning";
@@ -57,15 +56,21 @@ export default function PlanSekvenciPage() {
   const [item, setItem] = useState("");
   const [sort, setSort] = useState("");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  // Nekonecny seznam (bez strankovani v UI) - "page" jen rika, kolik davek uz je
+  // nactenych a prirustaji se k sobe (viz handleLoadMore); pri zmene filtru/razeni
+  // se resetuje na 1 a seznam se nahradi od zacatku.
   const [page, setPage] = useState(1);
 
   const [rgidOptions, setRgidOptions] = useState<string[]>([]);
   const [infOptions, setInfOptions] = useState<string[]>([]);
   const [gunFamilyOptions, setGunFamilyOptions] = useState<string[]>([]);
 
-  const [result, setResult] = useState<WorkplanListResult | null>(null);
+  const [items, setItems] = useState<WorkplanItem[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
 
   const [reasonTarget, setReasonTarget] = useState<WorkplanItem | null>(null);
 
@@ -88,7 +93,9 @@ export default function PlanSekvenciPage() {
 
   const filterEnabled = plant !== "" || dept !== "" || node !== "";
 
-  const filters = useMemo(
+  // Filtry/razeni bez "page" - zmena kterehokoliv z nich znamena novy vysledek
+  // (viz efekt nize), ne pokracovani stavajiciho nekonecneho seznamu.
+  const baseFilters = useMemo(
     () => ({
       plant: plant || undefined,
       dept: dept || undefined,
@@ -105,21 +112,36 @@ export default function PlanSekvenciPage() {
       item: item || undefined,
       sort: sort || undefined,
       sortDir: sort ? sortDir : undefined,
-      page,
-      pageSize: PAGE_SIZE,
     }),
-    [plant, dept, teamLeader, node, rgid, inf, gunFamily, inPlanOnly, nextPresun, waitingToMove, razeno, jobSuffix, item, sort, sortDir, page],
+    [plant, dept, teamLeader, node, rgid, inf, gunFamily, inPlanOnly, nextPresun, waitingToMove, razeno, jobSuffix, item, sort, sortDir],
+  );
+
+  // Nacte danou davku - "replace" nahradi seznam od zacatku (novy filtr/razeni nebo
+  // rucni refresh), "append" prida dalsi davku na konec (nekonecny scroll).
+  const loadPage = useCallback(
+    (pageToLoad: number, mode: "replace" | "append") => {
+      if (mode === "replace") setLoading(true);
+      else setLoadingMore(true);
+      setError(null);
+      return api
+        .workplan({ ...baseFilters, page: pageToLoad, pageSize: PAGE_SIZE })
+        .then((r) => {
+          setItems((prev) => (mode === "replace" ? r.items : [...prev, ...r.items]));
+          setTotalCount(r.totalCount);
+          setPage(pageToLoad);
+        })
+        .catch((e) => setError(e instanceof Error ? e.message : String(e)))
+        .finally(() => {
+          setLoading(false);
+          setLoadingMore(false);
+        });
+    },
+    [baseFilters],
   );
 
   const loadWorkplan = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    api
-      .workplan(filters)
-      .then(setResult)
-      .catch((e) => setError(e instanceof Error ? e.message : String(e)))
-      .finally(() => setLoading(false));
-  }, [filters]);
+    loadPage(1, "replace");
+  }, [loadPage]);
 
   const loadNodeSummary = useCallback(() => {
     if (!node) {
@@ -164,10 +186,6 @@ export default function PlanSekvenciPage() {
     api.workplanGunFamilies().then(setGunFamilyOptions);
   }, []);
 
-  useEffect(() => {
-    setPage(1);
-  }, [plant, dept, teamLeader, node, rgid, inf, gunFamily, inPlanOnly, nextPresun, waitingToMove, razeno, jobSuffix, item, sort, sortDir]);
-
   const plantOptions = useMemo(() => distinctSorted(nodes.map((n) => n.plant)), [nodes]);
   const deptOptions = useMemo(
     () => distinctSorted(nodes.filter((n) => !plant || n.plant === plant).map((n) => n.dept)),
@@ -199,6 +217,22 @@ export default function PlanSekvenciPage() {
   // rucniho tlacitka; tlacitko + 30min upozorneni na neaktualni data zustavaji jako
   // fallback (viz useStaleDataWarning). Interval z appsettings.json (useClientSettings).
   useAutoRefresh(handleRefresh, clientSettings.autoRefreshIntervalSeconds * 1000);
+
+  // Nekonecny seznam misto strankovani - dalsi davka se dotahne, kdyz uzivatel
+  // doscrolluje blizko ke spodku .table-scroll (viz onScroll na tom divu nize).
+  const handleLoadMore = useCallback(() => {
+    if (loading || loadingMore) return;
+    if (items.length >= totalCount) return;
+    loadPage(page + 1, "append");
+  }, [loading, loadingMore, items.length, totalCount, page, loadPage]);
+
+  const handleTableScroll = () => {
+    const el = tableScrollRef.current;
+    if (!el) return;
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 200) {
+      handleLoadMore();
+    }
+  };
 
   // Klik na sloupec: prvni klik seradi sestupne, dalsi klik na stejny sloupec
   // prehodi na vzestupne a zpet (bez navratu do vychoziho neseřazeneho stavu).
@@ -282,7 +316,6 @@ export default function PlanSekvenciPage() {
     return "";
   };
 
-  const totalPages = result ? Math.max(1, Math.ceil(result.totalCount / PAGE_SIZE)) : 1;
   const capacityText = formatCapacity(nodeSummary);
   const planTypeText = nodeSummary?.isOnlinePlan === null || nodeSummary?.isOnlinePlan === undefined
     ? ""
@@ -306,11 +339,25 @@ export default function PlanSekvenciPage() {
           <div className="ps-title-search-row">
             <h1>Plán sekvencí</h1>
             <label className="search-field">
-              <span>🔍 Položka</span>
+              <span className="search-field-label">
+                🔍 Položka
+                {item && (
+                  <button type="button" className="filter-clear-button" onClick={() => setItem("")} aria-label="Vymazat Položka">
+                    ✕
+                  </button>
+                )}
+              </span>
               <input type="text" value={item} onChange={(e) => setItem(e.target.value)} />
             </label>
             <label className="search-field">
-              <span>🔍 JobSuffix</span>
+              <span className="search-field-label">
+                🔍 JobSuffix
+                {jobSuffix && (
+                  <button type="button" className="filter-clear-button" onClick={() => setJobSuffix("")} aria-label="Vymazat JobSuffix">
+                    ✕
+                  </button>
+                )}
+              </span>
               <input type="text" value={jobSuffix} onChange={(e) => setJobSuffix(e.target.value)} />
             </label>
             <div className="ps-toggle-row">
@@ -394,13 +441,13 @@ export default function PlanSekvenciPage() {
 
       {error && <p className="reason-error">{error}</p>}
 
-      <div className="table-scroll">
+      <div className="table-scroll" ref={tableScrollRef} onScroll={handleTableScroll}>
         <table className="workplan-table">
           <thead>
             <tr>
               <th>Fixovat</th>
-              <th className="sortable" onClick={() => handleToggleSort("in_plan")}>
-                Plán <SortIcon active={sort === "in_plan"} dir={sortDir} />
+              <th className="sortable" onClick={() => handleToggleSort("rank_all")}>
+                Plán <SortIcon active={sort === "rank_all"} dir={sortDir} />
               </th>
               <th>JobSuffix</th>
               <th>Inf</th>
@@ -422,7 +469,7 @@ export default function PlanSekvenciPage() {
             </tr>
           </thead>
           <tbody>
-            {result?.items.map((row) => (
+            {items.map((row) => (
               <tr key={row.idJobSuffixOper} className={rowClass(row)}>
                 <td className="center fixovat-cell">
                   {row.mprio !== null && row.mprio >= 100 && row.mprio <= 110 && <span className="mprio-flag">P</span>}
@@ -436,25 +483,36 @@ export default function PlanSekvenciPage() {
                   )}
                 </td>
                 <td className="center">
-                  {(row.inPlan === 1 || row.inPlan === 2) && (
-                    <button
-                      type="button"
-                      className={"icon-button plan-arrow " + (row.inPlan === 1 ? "plan-arrow-pink" : "plan-arrow-orange")}
-                      title="Přepnout výběr"
-                      onClick={() => handleToggleSelected(row)}
-                    >
-                      ➜
-                    </button>
-                  )}
+                  {/* Tlacitko prepinajici "selected" musi byt klikatelne i kdyz sipka
+                      neni zobrazena (row.inPlan neni 1/2) - viz pozadavek na sjednocenou
+                      klikaci plochu ve sloupci Plán. */}
+                  <button
+                    type="button"
+                    className={
+                      "icon-button plan-arrow " +
+                      (row.inPlan === 1 ? "plan-arrow-pink" : row.inPlan === 2 ? "plan-arrow-orange" : "plan-arrow-empty")
+                    }
+                    title="Přepnout výběr"
+                    onClick={() => handleToggleSelected(row)}
+                  >
+                    {(row.inPlan === 1 || row.inPlan === 2) ? "➜" : ""}
+                  </button>
                 </td>
                 <td className={row.selected ? "text-selected" : ""}>
-                  <button type="button" className="doc-icon-button" title="Detail operace" onClick={() => openDetail(row)}>📄</button>
-                  <span className="jobsuffix-link" title="Sériová čísla" onClick={() => openSerialNumbers(row)}>
-                    {row.idJobSuffix}
-                  </span>
-                  {row.razeno === 1 && (
-                    <span className="razeno-flag" title={`DS: ${row.nextRadodOper ?? ""}`}>T</span>
-                  )}
+                  {/* Detail operace a JobSuffix jsou samostatne blokove (div) elementy,
+                      ne button+span - jinak trojklik na text JobSuffix oznaci i tlacitko
+                      vedle nej (bezici jako jedna "odstavcova" jednotka pro selekci). */}
+                  <div className="jobsuffix-cell-row">
+                    <div className="doc-icon-wrap">
+                      <button type="button" className="doc-icon-button" title="Detail operace" onClick={() => openDetail(row)}>📄</button>
+                    </div>
+                    <div className="jobsuffix-link" title="Sériová čísla" onClick={() => openSerialNumbers(row)}>
+                      {row.idJobSuffix}
+                    </div>
+                    {row.razeno === 1 && (
+                      <div className="razeno-flag" title={`DS: ${row.nextRadodOper ?? ""}`}>T</div>
+                    )}
+                  </div>
                 </td>
                 <td>{row.inf}</td>
                 <td className="item-link" title="X-suffix (návaznost)" onClick={() => openXSuffix(row)}>{row.item}</td>
@@ -497,20 +555,21 @@ export default function PlanSekvenciPage() {
                 </td>
               </tr>
             ))}
-            {!loading && result?.items.length === 0 && (
+            {!loading && items.length === 0 && (
               <tr>
                 <td colSpan={15} className="empty-row">Žádná data pro zvolené filtry.</td>
+              </tr>
+            )}
+            {loadingMore && (
+              <tr>
+                <td colSpan={15} className="empty-row">Načítám další záznamy…</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
 
-      <div className="pagination">
-        <button type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>‹ Předchozí</button>
-        <span>Strana {page} / {totalPages} ({result?.totalCount ?? 0} záznamů)</span>
-        <button type="button" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Další ›</button>
-      </div>
+      <div className="result-count">{totalCount} záznamů{items.length < totalCount ? ` (zobrazeno ${items.length})` : ""}</div>
 
       {reasonTarget && (
         <ReasonPanel

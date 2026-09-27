@@ -30,7 +30,8 @@ public class ProducedService(BiAppDbContext db, AuditLogService auditLog)
             .ThenBy(x => x.IdJobSuffixOper)
             .ToListAsync(ct);
 
-        return rows.Select(ToDto).ToList();
+        var itemDescriptions = await GetItemDescriptionsAsync(rows.Select(x => x.Item), ct);
+        return rows.Select(x => ToDto(x, itemDescriptions.GetValueOrDefault(x.Item ?? ""))).ToList();
     }
 
     // PRD 6.5 + Vyhodnocení.pa.yaml (Gallery3_2) - polozky vyrobene nad planem nebo
@@ -55,7 +56,25 @@ public class ProducedService(BiAppDbContext db, AuditLogService auditLog)
             .ThenBy(x => x.IdJobSuffixOper)
             .ToListAsync(ct);
 
-        return rows.Select(x => new OverPlanItemDto(x.Id, x.IdJobSuffixOper, x.Item, x.Status, x.StatusDesc, x.SequenceDateTime, x.HodProduced, x.QtyDone, x.Prio)).ToList();
+        var itemDescriptions = await GetItemDescriptionsAsync(rows.Select(x => x.Item), ct);
+        return rows.Select(x => new OverPlanItemDto(
+            x.Id, x.IdJobSuffixOper, x.Item, itemDescriptions.GetValueOrDefault(x.Item ?? ""),
+            x.Status, x.StatusDesc, x.SequenceDateTime, x.HodProduced, x.QtyDone, x.Prio)).ToList();
+    }
+
+    // Popisy polozek (t_item.description) pro sadu item kodu - viz Item.cs (PRD
+    // 6.4 doplnek, t_workplan_produced sam o sobe zadny popis nema).
+    private async Task<Dictionary<string, string?>> GetItemDescriptionsAsync(IEnumerable<string?> itemCodes, CancellationToken ct)
+    {
+        var codes = itemCodes.Where(x => !string.IsNullOrEmpty(x)).Distinct().ToList();
+        if (codes.Count == 0)
+        {
+            return new Dictionary<string, string?>();
+        }
+
+        return await db.Items.AsNoTracking()
+            .Where(x => codes.Contains(x.ItemCode))
+            .ToDictionaryAsync(x => x.ItemCode, x => x.Description, ct);
     }
 
     // Panel "Vyhodnoceni planu:" + "Graf vyhodnoceni" (Vyhodnocení.pa.yaml, Group10) -
@@ -157,11 +176,12 @@ public class ProducedService(BiAppDbContext db, AuditLogService auditLog)
         return ReasonSubmitResult.Success;
     }
 
-    private static ProducedItemDto ToDto(WorkplanProduced x) => new(
+    private static ProducedItemDto ToDto(WorkplanProduced x, string? itemDesc) => new(
         x.Id,
         x.Date,
         x.IdJobSuffixOper,
         x.Item,
+        itemDesc,
         x.QtyTodo,
         x.QtyDone,
         x.HodPlan,

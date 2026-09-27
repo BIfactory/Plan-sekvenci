@@ -31,9 +31,6 @@ builder.Services.AddAuthorizationBuilder()
 builder.Services.Configure<ApproverOptions>(
     builder.Configuration.GetSection(ApproverOptions.SectionName));
 
-builder.Services.Configure<AzureAdOptions>(
-    builder.Configuration.GetSection(AzureAdOptions.SectionName));
-
 builder.Services.Configure<ClientSettingsOptions>(
     builder.Configuration.GetSection(ClientSettingsOptions.SectionName));
 
@@ -51,8 +48,6 @@ if (bypassAdInDevelopment)
 }
 else
 {
-    builder.Services.AddHttpClient();
-    builder.Services.AddSingleton<IGraphGroupMembershipChecker, GraphGroupMembershipChecker>();
     builder.Services.AddSingleton<IApproverService, ApproverService>();
 }
 

@@ -33,6 +33,9 @@ public class BiAppDbContext(DbContextOptions<BiAppDbContext> options) : DbContex
     // Filtr "Datum" na Vyhodnoceni (PRD 6.2) - viz CalendarLastWorkday.cs.
     public DbSet<CalendarLastWorkday> CalendarLastWorkdays => Set<CalendarLastWorkday>();
 
+    // Ciselnik polozek (t_item) - sloupec "Popis" na Vyhodnoceni, viz Item.cs.
+    public DbSet<Item> Items => Set<Item>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<WorkplanInput>(e =>
@@ -139,6 +142,11 @@ public class BiAppDbContext(DbContextOptions<BiAppDbContext> options) : DbContex
         {
             e.HasNoKey();
             e.ToView("v_calendar_last_3_workdays");
+        });
+
+        modelBuilder.Entity<Item>(e =>
+        {
+            e.HasKey(x => x.ItemCode);
         });
     }
 }

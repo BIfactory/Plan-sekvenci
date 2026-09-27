@@ -6,6 +6,9 @@ public record ProducedItemDto(
     DateOnly? Date,
     string? IdJobSuffixOper,
     string? Item,
+    // Popis polozky (t_item.description) - t_workplan_produced sam o sobe zadny
+    // popis nema, viz Item.cs.
+    string? ItemDesc,
     double? QtyTodo,
     double? QtyDone,
     double? HodPlan,
@@ -32,6 +35,7 @@ public record OverPlanItemDto(
     long Id,
     string? IdJobSuffixOper,
     string? Item,
+    string? ItemDesc,
     int? Status,
     string? StatusDesc,
     DateTime? SequenceDateTime,

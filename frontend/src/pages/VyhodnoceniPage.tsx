@@ -253,6 +253,7 @@ export default function VyhodnoceniPage() {
               <th>Status</th>
               <th>JobSuffix</th>
               <th>Položka</th>
+              <th>Popis</th>
               <th>Plán [hod]</th>
               <th>Vyrobeno [hod]</th>
               <th>Plán [ks]</th>
@@ -271,6 +272,7 @@ export default function VyhodnoceniPage() {
                 </td>
                 <td title={row.rgid ?? undefined}>{row.idJobSuffixOper}</td>
                 <td>{row.item}</td>
+                <td>{row.itemDesc}</td>
                 <td className="num">{round(row.hodPlan, 2)}</td>
                 <td className="num">{round(row.hodProduced, 2)}</td>
                 <td className="num">{row.qtyTodo}</td>
@@ -293,7 +295,7 @@ export default function VyhodnoceniPage() {
             ))}
             {!loading && items.length === 0 && (
               <tr>
-                <td colSpan={10} className="empty-row">Žádná data pro zvolené filtry.</td>
+                <td colSpan={11} className="empty-row">Žádná data pro zvolené filtry.</td>
               </tr>
             )}
           </tbody>
@@ -308,6 +310,7 @@ export default function VyhodnoceniPage() {
               <th>Status</th>
               <th>JobSuffix</th>
               <th>Položka</th>
+              <th>Popis</th>
               <th>Vyrobeno [hod]</th>
               <th>Vyrobeno [ks]</th>
               <th>Sequence date</th>
@@ -323,6 +326,7 @@ export default function VyhodnoceniPage() {
                 </td>
                 <td>{row.idJobSuffixOper}</td>
                 <td>{row.item}</td>
+                <td>{row.itemDesc}</td>
                 <td className="num">{round(row.hodProduced, 1)}</td>
                 <td className="num">{round(row.qtyDone, 2)}</td>
                 <td className="num">{formatDate(row.sequenceDateTime)}</td>
@@ -331,7 +335,7 @@ export default function VyhodnoceniPage() {
             ))}
             {overPlan.length === 0 && (
               <tr>
-                <td colSpan={7} className="empty-row">Žádné položky nad plán ani mimo plán.</td>
+                <td colSpan={8} className="empty-row">Žádné položky nad plán ani mimo plán.</td>
               </tr>
             )}
           </tbody>

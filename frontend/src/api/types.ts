@@ -127,6 +127,7 @@ export interface ProducedItem {
   date: string | null;
   idJobSuffixOper: string | null;
   item: string | null;
+  itemDesc: string | null;
   qtyTodo: number | null;
   qtyDone: number | null;
   hodPlan: number | null;
@@ -150,6 +151,7 @@ export interface OverPlanItem {
   id: number;
   idJobSuffixOper: string | null;
   item: string | null;
+  itemDesc: string | null;
   status: number | null;
   statusDesc: string | null;
   sequenceDateTime: string | null;
